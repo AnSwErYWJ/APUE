@@ -21,7 +21,8 @@ void ouch(int sig)
 
 int main(void)
 {
-    (void)signal(SIGINT,ouch);
+    if(signal(SIGINT,ouch)==SIG_ERR)
+        perror("can not catch SIGINT!\n");
 
     while(1)
     {
