@@ -36,7 +36,8 @@ int main(void)
     }
 
     printf("waiting!\n");
-    (void) signal(SIGALRM,ding);
+    if(signal(SIGALRM,ding)==SIG_ERR)
+        perror("can not cauth SIGALRM!\n");
 
     pause();//城西挂起直到有信号
 
