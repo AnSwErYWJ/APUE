@@ -98,9 +98,3 @@ void daemonize(const char *cmd)
         
 }
 
-int main(void)
-{
-    daemonize("ls");
-    sleep(10);
-    return 0;
-}
