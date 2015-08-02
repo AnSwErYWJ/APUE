@@ -9,6 +9,7 @@
  *初始化守护进程
  */
 
+#include "daemonize.h"
 #include<stdio.h>
 #include<sys/stat.h>
 #include<sys/resource.h>
@@ -29,24 +30,20 @@ void daemonize(const char *cmd)
     umask(0);
 
     /*获取最高文件描述符值*/
-    if(getrlimit(RLIMIT_NOFILE,&rl) !=0 )
+    if(getrlimit(RLIMIT_NOFILE,&rl) != 0)
     {
         fprintf(stderr,"%s can not get the file limit\n",cmd);
-        exit(1);
+        return;
     }
 
     /*创建新会话*/
-    pid = fork();
-    switch(pid)
+    if((pid = fork()) == -1)
     {
-        case -1:
         perror("fork failed");
-        exit(2);
-        case 0:
-        break;
-        default:
-        exit(0);
+        return;
     }
+    else if(pid != 0)
+            exit(0);
     setsid();
 
     /*避免取得控制终端*/
@@ -56,25 +53,21 @@ void daemonize(const char *cmd)
     if(sigaction(SIGHUP,&sa,NULL) == -1)
     {
         perror("can not ignore SIGHUP");
-        exit(3);
+        return;
     }
-    pid = fork();
-    switch(pid)
+    if((pid = fork()) == -1)
     {
-        case -1:
         perror("fork failed");
-        exit(3);
-        case 0:
-        break;
-        default:
-        exit(0);
+        return;
     }
+    else if(pid != 0)
+            exit(0);
     
     /*将当前工作目录更换为根目录*/
     if(chdir("/") == -1)
     {
         perror("can not change directory to /");
-        exit(4);
+        return;
     }
 
     /*关闭不需要的文件描述符*/
@@ -86,15 +79,15 @@ void daemonize(const char *cmd)
     /*将文件描述父0，1，2定向到/dev/null上*/
     fd0=open("/dev/null",O_RDWR);
     fd1=dup(0);
-    fd2=(0);
+    fd2=dup(0);
 
-    /*初始化日志文件*/
+    /* 初始化日志文件*/
     openlog(cmd,LOG_CONS,LOG_DAEMON);
     if(fd0 != 0||fd1 != 1||fd2 != 2)
     {
         syslog(LOG_ERR,"unexpected file descriptors %d %d %d.",fd0,fd1,fd2);
-        exit(5);
+        exit(1);
     }
-        
 }
+
 
